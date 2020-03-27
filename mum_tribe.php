@@ -4,22 +4,16 @@
  */
 
 // Print the response as plain text so that the gateway can read it
-#header('Content-type: text/plain');
+header('Content-type: text/plain');
 
-
-// $dsn = 'mysql:dbname=ussd_test;host=35.180.122.231;'; //database name
-// $user = 'root'; // your mysql user 
-// $password = '1234'; // your mysql password
-
-$dsn = "mysql:host=35.180.122.231;dbname=ussd_test";
-$user = "root";
-$passwd = "1234";
+/* local db configuration */
+$dsn = 'mysql:dbname=ussd_test;host=35.180.122.231/;'; //database name
+$user = 'root'; // your mysql user 
+$password = '1234'; // your mysql password
 
 //  Create a PDO instance that will allow you to access your database
 try {
-
-  $pdo = new PDO($dsn, $user, $passwd);
-
+    $dbh = new PDO($dsn, $user, $password);
 }
 catch(PDOException $e) {
     //var_dump($e);
