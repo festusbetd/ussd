@@ -1,50 +1,132 @@
 <?php
+/* Simple sample USSD registration application
+ * USSD gateway that is being used is Africa's Talking USSD gateway
+ */
 
-// Reads the variables sent via POST from our gateway
-$sessionId   = $_POST["sessionId"];
-$serviceCode = $_POST["serviceCode"];
-$phoneNumber = $_POST["phoneNumber"];
-$text        = $_POST["text"];
+// Print the response as plain text so that the gateway can read it
+header('Content-type: text/plain');
 
-if ( $text == "" ) {
+/* local db configuration */
+$dsn = 'mysql:dbname=ussd_test;host=35.180.122.231/;'; //database name
+$user = 'root'; // your mysql user 
+$password = '1234'; // your mysql password
 
-	 // This is the first request. Note how we start the response with CON
-	 $response  = "CON What would you want to check \n";
-	 $response .= "1. My Account \n";
-	 $response .= "2. My phone number";
-
-}else if ( $text == "1" ) {
-  // Business logic for first level response
-  $response = "CON Choose account information you want to view \n";
-  $response .= "1. Account number \n";
-  $response .= "2. Account balance";
-  
-}else if($text == "2") {
- 
-  // Business logic for first level response
-
-  // This is a terminal request. Note how we start the response with END
-  $response = "END Your phone number is $phoneNumber";
- 
-}else if($text == "1*1") {
- 
-  // This is a second level response where the user selected 1 in the first instance
-  $accountNumber  = "ACC1001";
-  // This is a terminal request. Note how we start the response with END
-  $response = "END Your account number is $accountNumber";
- 
-}else if ( $text == "1*2" ) {
-  
-	 // This is a second level response where the user selected 1 in the first instance
-	 $balance  = "NGN 10,000";
-	 // This is a terminal request. Note how we start the response with END
-	 $response = "END Your balance is $balance";
-
+//  Create a PDO instance that will allow you to access your database
+try {
+    $dbh = new PDO($dsn, $user, $password);
+}
+catch(PDOException $e) {
+    //var_dump($e);
+    echo("PDO error occurred");
+}
+catch(Exception $e) {
+    //var_dump($e);
+    echo("Error occurred");
 }
 
-// Print the response onto the page so that our gateway can read it
-header('Content-type: text/plain');
-echo $response;
+// Get the parameters provided by Africa's Talking USSD gateway
+$phone = $_GET['phoneNumber'];
+$session_id = $_GET['sessionId'];
+$service_code = $_GET['serviceCode'];
+$ussd_string= $_GET['text'];
 
-// DONE!!!
+//set default level to zero
+$level = 0;
+
+/* Split text input based on asteriks(*)
+ * Africa's talking appends asteriks for after every menu level or input
+ * One needs to split the response from Africa's Talking in order to determine
+ * the menu level and input for each level
+ * */
+$ussd_string_exploded = explode ("*",$ussd_string);
+
+// Get menu level from ussd_string reply
+$level = count($ussd_string_exploded);
+
+if($level == 1 or $level == 0){
+    
+    display_menu(); // show the home/first menu
+}
+
+if ($level > 1)
+{
+
+    if ($ussd_string_exploded[0] == "1")
+    {
+        // If user selected 1 send them to the registration menu
+        register($ussd_string_exploded,$phone, $dbh);
+    }
+
+  else if ($ussd_string_exploded[0] == "2"){
+        //If user selected 2, send them to the about menu
+        about($ussd_string_exploded);
+    }
+}
+
+/* The ussd_proceed function appends CON to the USSD response your application gives.
+ * This informs Africa's Talking USSD gateway and consecuently Safaricom's
+ * USSD gateway that the USSD session is till in session or should still continue
+ * Use this when you want the application USSD session to continue
+*/
+function ussd_proceed($ussd_text){
+    echo "CON $ussd_text";
+}
+
+/* This ussd_stop function appends END to the USSD response your application gives.
+ * This informs Africa's Talking USSD gateway and consecuently Safaricom's
+ * USSD gateway that the USSD session should end.
+ * Use this when you to want the application session to terminate/end the application
+*/
+function ussd_stop($ussd_text){
+    echo "END $ussd_text";
+}
+
+//This is the home menu function
+function display_menu()
+{
+    $ussd_text =    "1. Register \n 2. About \n"; // add \n so that the menu has new lines
+    ussd_proceed($ussd_text);
+}
+
+
+// Function that hanldles About menu
+function about($ussd_text)
+{
+    $ussd_text =    "This is a sample registration application";
+    ussd_stop($ussd_text);
+}
+
+// Function that handles Registration menu
+function register($details,$phone, $dbh){
+    if(count($details) == 2)
+    {
+        $ussd_text = "Please enter your Full Name and Email, each seperated by commas:";
+        ussd_proceed($ussd_text); // ask user to enter registration details
+    }
+    if(count($details)== 3)
+    {
+        if (empty($details[1])){
+                $ussd_text = "Sorry we do not accept blank values";
+                ussd_proceed($ussd_text);
+        } else {
+        $input = explode(",",$details[1]);//store input values in an array
+        $full_name = $input[0];//store full name
+        $email = $input[1];//store email
+        $phone_number =$phone;//store phone number 
+
+        // build sql statement
+        $sth = $dbh->prepare("INSERT INTO customer (full_name, email, phone) VALUES('$full_name','$email','$phone_number')");
+        //execute insert query   
+        $sth->execute();
+        if($sth->errorCode() == 0) {
+            $ussd_text = $full_name." your registration was successful. Your email is ".$email." and phone number is ".$phone_number;
+            ussd_proceed($ussd_text);
+        } else {
+            $errors = $sth->errorInfo();
+        }
+    }
+}
+}
+# close the pdo connection  
+$dbh = null;
 ?>
