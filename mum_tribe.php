@@ -7,7 +7,7 @@
 header('Content-type: text/plain');
 
 /* local db configuration */
-$dsn = 'mysql:dbname=ussd_test;host=35.180.122.231/;'; //database name
+$dsn = 'mysql:host=35.180.122.231/;dbname=ussd_test;'; //database name
 $user = 'root'; // your mysql user 
 $password = '1234'; // your mysql password
 
@@ -17,7 +17,7 @@ try {
 }
 catch(PDOException $e) {
     //var_dump($e);
-    echo("PDO error occurred");
+    echo("PDO error occurred ");
 }
 catch(Exception $e) {
     //var_dump($e);
