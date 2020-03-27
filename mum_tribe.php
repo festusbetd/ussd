@@ -4,7 +4,7 @@
  */
 
 // Print the response as plain text so that the gateway can read it
-header('Content-type: text/plain');
+#header('Content-type: text/plain');
 
 /* local db configuration */
 $dsn = 'mysql:host=35.180.122.231;dbname=ussd_test'; //database name
