@@ -6,24 +6,6 @@
 // Print the response as plain text so that the gateway can read it
 header('Content-type: text/plain');
 
-/* local db configuration */
-$dsn = 'mysql:host=35.180.122.231/;dbname=ussd_test'; //database name
-$user = 'root'; // your mysql user 
-$password = '1234'; // your mysql password
-
-//  Create a PDO instance that will allow you to access your database
-try {
-    $dbh = new PDO($dsn, $user, $password);
-}
-catch(PDOException $e) {
-    //var_dump($e);
-    echo("PDO error occurred ");
-}
-catch(Exception $e) {
-    //var_dump($e);
-    echo("Error occurred");
-}
-
 // Get the parameters provided by Africa's Talking USSD gateway
 $phone = $_GET['phoneNumber'];
 $session_id = $_GET['sessionId'];
@@ -84,7 +66,7 @@ function ussd_stop($ussd_text){
 //This is the home menu function
 function display_menu()
 {
-    $ussd_text =    "1. Register \n 2. About \n"; // add \n so that the menu has new lines
+    $ussd_text =    "1. Dont Just Frustrate and Humiliate me Rossie \n 2. Dont Just Frustrate and Humiliate me Rossie \n"; // add \n so that the menu has new lines
     ussd_proceed($ussd_text);
 }
 
@@ -92,41 +74,11 @@ function display_menu()
 // Function that hanldles About menu
 function about($ussd_text)
 {
-    $ussd_text =    "This is a sample registration application";
+    $ussd_text =    "I am really sorry";
     ussd_stop($ussd_text);
 }
 
-// Function that handles Registration menu
-function register($details,$phone, $dbh){
-    if(count($details) == 2)
-    {
-        $ussd_text = "Please enter your Full Name and Email, each seperated by commas:";
-        ussd_proceed($ussd_text); // ask user to enter registration details
-    }
-    if(count($details)== 3)
-    {
-        if (empty($details[1])){
-                $ussd_text = "Sorry we do not accept blank values";
-                ussd_proceed($ussd_text);
-        } else {
-        $input = explode(",",$details[1]);//store input values in an array
-        $full_name = $input[0];//store full name
-        $email = $input[1];//store email
-        $phone_number =$phone;//store phone number 
 
-        // build sql statement
-        $sth = $dbh->prepare("INSERT INTO customer (full_name, email, phone) VALUES('$full_name','$email','$phone_number')");
-        //execute insert query   
-        $sth->execute();
-        if($sth->errorCode() == 0) {
-            $ussd_text = $full_name." your registration was successful. Your email is ".$email." and phone number is ".$phone_number;
-            ussd_proceed($ussd_text);
-        } else {
-            $errors = $sth->errorInfo();
-        }
-    }
-}
-}
 # close the pdo connection  
 $dbh = null;
 ?>
